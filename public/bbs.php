@@ -10,7 +10,7 @@ if (isset($_POST['body'])) {
     if (preg_match('/^image\//', mime_content_type($_FILES['image']['tmp_name'])) !== 1) {
       // アップロードされたものが画像ではなかった場合
       header("HTTP/1.1 302 Found");
-      header("Location: ./bbsimagetest.php");
+      header("Location: ./bbs.php");
     }
 
     // 元のファイル名から拡張子を取得
@@ -32,7 +32,7 @@ if (isset($_POST['body'])) {
   // 処理が終わったらリダイレクトする
   // リダイレクトしないと，リロード時にまた同じ内容でPOSTすることになる
   header("HTTP/1.1 302 Found");
-  header("Location: ./bbsimagetest.php");
+  header("Location: ./bbs.php");
   return;
 }
 
@@ -42,7 +42,7 @@ $select_sth->execute();
 ?>
 
 <!-- フォームのPOST先はこのファイル自身にする -->
-<form method="POST" action="./bbsimagetest.php" enctype="multipart/form-data">
+<form id="form">
   <textarea name="body"></textarea>
   <div style="margin: 1em 0;">
     <input type="file" accept="image/*" name="image" id="imageInput">
@@ -52,7 +52,7 @@ $select_sth->execute();
 
 <hr>
 
-<?php foreach($select_sth as $entry): ?>
+<?php foreach ($select_sth as $entry) : ?>
   <dl style="margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1px solid #ccc;">
     <dt>ID</dt>
     <dd><?= $entry['id'] ?></dd>
@@ -60,30 +60,57 @@ $select_sth->execute();
     <dd><?= $entry['created_at'] ?></dd>
     <dt>内容</dt>
     <dd>
-      <?= nl2br(htmlspecialchars($entry['body'])) // 必ず htmlspecialchars() すること ?>
-      <?php if(!empty($entry['image_filename'])): // 画像がある場合は img 要素を使って表示 ?>
-      <div>
-        <img src="/image/<?= $entry['image_filename'] ?>" style="max-height: 10em;">
-      </div>
+      <?= nl2br(htmlspecialchars($entry['body'])) // 必ず htmlspecialchars() すること 
+      ?>
+      <?php if (!empty($entry['image_filename'])) : // 画像がある場合は img 要素を使って表示 
+      ?>
+        <div>
+          <img src="/image/<?= $entry['image_filename'] ?>" style="max-height: 10em;">
+        </div>
       <?php endif; ?>
     </dd>
   </dl>
 <?php endforeach ?>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const imageInput = document.getElementById("imageInput");
-  imageInput.addEventListener("change", () => {
-    if (imageInput.files.length < 1) {
-      // 未選択の場合
-      return;
-    }
-    if (imageInput.files[0].size > 5 * 1024 * 1024) {
-      // ファイルが5MBより多い場合
-      alert("5MB以下のファイルを選択してください。");
-      imageInput.value = "";
-    }
-  });
-});
-</script>
+<script type="module">
+  import axios from 'https://esm.sh/axios'
+  import imageCompression from 'https://esm.sh/browser-image-compression@2.0.0';
 
+  const form = document.getElementById("form");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = e.target[0].value;
+    let image = e.target[1].files[0];
+    if (image.size > 5 * 1024 * 1024) {
+      // ファイルが5MBより多い場合
+      image = await compressImage(image);
+    }
+    const formData = new FormData();
+    formData.append("body", body);
+    formData.append("image", image);
+    const res = await axios.post("./bbs.php", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+    console.log(res);
+    window.location.reload();
+  });
+
+  async function compressImage(imageFile) {
+    console.log(`originalFile size ${imageFile.size / 1024 / 1024} MB`);
+    try {
+      const compressedFile = await imageCompression(imageFile, {
+        maxSizeMB: 4,
+        useWebWorker: true
+      });
+      console.log(`compressedFile size ${compressedFile.size / 1024 / 1024} MB`);
+      return compressedFile;
+    } catch (error) {
+      console.log(error);
+      alert("イメージリサイズに失敗しました");
+      return null;
+    }
+  }
+</script>

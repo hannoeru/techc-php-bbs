@@ -4,7 +4,7 @@ services:
   web:
     image: nginx:latest
     ports:
-      - 80:80
+      - 8080:80
     volumes:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       - ./public/:/var/www/public/
@@ -29,13 +29,9 @@ services:
     volumes:
       - mysql:/var/lib/mysql
     command: >
-      mysqld
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-      --max_allowed_packet=4MB
+      mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max_allowed_packet=4MB
 volumes:
   image:
     driver: local
   mysql:
     driver: local
-

@@ -1,6 +1,6 @@
 # techc-php-bbs
 
-URL: http://ec2-34-224-78-199.compute-1.amazonaws.com/bbs.php
+URL: http://ec2-54-82-71-191.compute-1.amazonaws.com/bbs.php
 
 ## Development
 

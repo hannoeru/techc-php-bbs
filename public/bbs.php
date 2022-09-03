@@ -47,7 +47,7 @@ $select_sth->execute();
   <div style="margin: 1em 0;">
     <input type="file" accept="image/*" name="image" id="imageInput">
   </div>
-  <button type="submit">送信</button>
+  <button id="btn" type="submit">送信</button>
 </form>
 
 <hr>
@@ -77,14 +77,17 @@ $select_sth->execute();
   import imageCompression from 'https://esm.sh/browser-image-compression@2.0.0';
 
   const form = document.getElementById("form");
+  const btn = document.getElementById("btn");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const body = e.target[0].value;
     let image = e.target[1].files[0];
     if (image && image.size > 5 * 1024 * 1024) {
+      btn.innerHTML = "圧縮中...";
       // ファイルが5MBより多い場合
       image = await compressImage(image);
+      btn.innerHTML = "送信";
     }
     const formData = new FormData();
     formData.append("body", body);

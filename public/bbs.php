@@ -82,13 +82,15 @@ $select_sth->execute();
     e.preventDefault();
     const body = e.target[0].value;
     let image = e.target[1].files[0];
-    if (image.size > 5 * 1024 * 1024) {
+    if (image && image.size > 5 * 1024 * 1024) {
       // ファイルが5MBより多い場合
       image = await compressImage(image);
     }
     const formData = new FormData();
     formData.append("body", body);
-    formData.append("image", image);
+    if (image) {
+      formData.append("image", image);
+    }
     const res = await axios.post("./bbs.php", formData, {
       headers: {
         "Content-Type": "multipart/form-data"

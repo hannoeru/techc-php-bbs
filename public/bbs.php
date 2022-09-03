@@ -43,7 +43,7 @@ $select_sth->execute();
 
 <!-- フォームのPOST先はこのファイル自身にする -->
 <form id="form">
-  <textarea name="body"></textarea>
+  <textarea name="body" required></textarea>
   <div style="margin: 1em 0;">
     <input type="file" accept="image/*" name="image" id="imageInput">
   </div>
@@ -53,14 +53,20 @@ $select_sth->execute();
 <hr>
 
 <?php foreach ($select_sth as $entry) : ?>
-  <dl style="margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1px solid #ccc;">
+  <dl style="margin-bottom: 1em; padding-bottom: 1em; border-bottom: 1px solid #ccc;" id="<?= $entry['id'] ?>">
     <dt>ID</dt>
     <dd><?= $entry['id'] ?></dd>
     <dt>日時</dt>
     <dd><?= $entry['created_at'] ?></dd>
     <dt>内容</dt>
+    <?php
+    $body = nl2br(htmlspecialchars($entry['body']));
+    $urlPattern = htmlspecialchars('/>>([1-9][0-9]?+)/');
+    $replace = '<a href="#\\1">>>\\1</a>';
+    $body = preg_replace($urlPattern, $replace, $body);
+    ?>
     <dd>
-      <?= nl2br(htmlspecialchars($entry['body'])) // 必ず htmlspecialchars() すること 
+      <?= $body // 必ず htmlspecialchars() すること 
       ?>
       <?php if (!empty($entry['image_filename'])) : // 画像がある場合は img 要素を使って表示 
       ?>
@@ -81,25 +87,32 @@ $select_sth->execute();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const body = e.target[0].value;
+
+    let body = e.target[0].value;
     let image = e.target[1].files[0];
+
     if (image && image.size > 5 * 1024 * 1024) {
       btn.innerHTML = "圧縮中...";
       // ファイルが5MBより多い場合
       image = await compressImage(image);
       btn.innerHTML = "送信";
     }
+
     const formData = new FormData();
+    body = body.replace('<br>', '\n')
     formData.append("body", body);
+
     if (image) {
       formData.append("image", image);
     }
+
     const res = await axios.post("./bbs.php", formData, {
       headers: {
         "Content-Type": "multipart/form-data"
       }
     });
     console.log(res);
+
     window.location.reload();
   });
 
